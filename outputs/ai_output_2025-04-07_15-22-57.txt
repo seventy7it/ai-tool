@@ -1,0 +1,5 @@
+🧠 Prompt:
+hows teh stock market today
+
+📝 Response:
+Agent stopped due to iteration limit or time limit.

@@ -3,15 +3,15 @@ from langchain_ollama import ChatOllama
 from langchain.agents import initialize_agent, AgentType, Tool
 from dotenv import load_dotenv
 import os
+import datetime
+import sys
+
+# Load environment variables
 load_dotenv()
-
 api_key = os.getenv("TAVILY_API_KEY")
-# Use api_key wherever needed in your Tavily config
 
-
-# Define the search tool with correct name/description
+# Define the Tavily search tool
 search = TavilySearchResults()
-
 tools = [
     Tool.from_function(
         func=search.run,
@@ -23,55 +23,37 @@ tools = [
 # Initialize the model
 llm = ChatOllama(model="mistral", base_url="http://localhost:11434")
 
-# Build the agent
-agent = initialize_agent(
+# Set up the agent
+agent_executor = initialize_agent(
     tools=tools,
     llm=llm,
     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     verbose=True,
     handle_parsing_errors=True,
+    max_iterations=15,
+    max_execution_time=60
 )
 
-# Prompt user for input
-import sys
-
+# Get query from input or fallback
 if sys.stdin.isatty():
     query = input("💬 Enter your search prompt: ")
 else:
-    # Fallback if running non-interactively (e.g., from cron)
     query = "summarize the latest headlines from this morning"
 
-result = agent.run(query)
+# Run the agent
+response = agent_executor.invoke({"input": query})
+result = response["output"] if "output" in response else str(response)
 
-import datetime
-
-# Define output directory
+# Save to file
+timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 output_dir = os.path.expanduser("~/my-docs/outputs")
-os.makedirs(output_dir, exist_ok=True)  # Create it if it doesn't exist
-
-# Create timestamped filename
-timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-filename = f"ai_output_{timestamp}.txt"
-filepath = os.path.join(output_dir, filename)
-
-# Write result to file
-with open(filepath, "w") as f:
-    f.write(result)
-
-print(f"✅ Output saved to: {filepath}")
-
-# Save the input + output to a uniquely named file
-timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-output_dir = os.path.join(os.getcwd(), "outputs")
 os.makedirs(output_dir, exist_ok=True)
-filename = os.path.join(output_dir, f"ai_output_{timestamp}.txt")
+filepath = os.path.join(output_dir, f"ai_output_{timestamp}.txt")
 
-with open(filename, "w") as f:
+with open(filepath, "w") as f:
     f.write(f"🧠 Prompt:\n{query}\n\n📝 Response:\n{result}\n")
 
-print(f"\n✅ Output saved to: {filename}\n")
-os.system(f"cat {filename}")
+print(f"\n✅ Output saved to: {filepath}\n")
 
-# Automatically display the file contents
-with open(filepath, "r") as f:
-    print(f.read())
+# Display the file contents
+os.system(f"cat {filepath}")
