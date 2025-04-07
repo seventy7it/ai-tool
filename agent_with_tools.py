@@ -1,6 +1,13 @@
 from langchain_community.tools.tavily_search.tool import TavilySearchResults
 from langchain_ollama import ChatOllama
 from langchain.agents import initialize_agent, AgentType, Tool
+from dotenv import load_dotenv
+import os
+load_dotenv()
+
+api_key = os.getenv("TAVILY_API_KEY")
+# Use api_key wherever needed in your Tavily config
+
 
 # Define the search tool with correct name/description
 search = TavilySearchResults()
@@ -26,10 +33,16 @@ agent = initialize_agent(
 )
 
 # Prompt user for input
-query = input("💬 Enter your search prompt: ")
+import sys
+
+if sys.stdin.isatty():
+    query = input("💬 Enter your search prompt: ")
+else:
+    # Fallback if running non-interactively (e.g., from cron)
+    query = "summarize the latest headlines from this morning"
+
 result = agent.run(query)
 
-import os
 import datetime
 
 # Define output directory
