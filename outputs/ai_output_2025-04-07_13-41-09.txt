@@ -1,0 +1,5 @@
+🧠 Prompt:
+pick and random news aritcle from this weekend and summerize it for me
+
+📝 Response:
+Scientists Announce Breakthrough in Renewable Energy Storage - Researchers at MIT developed a new material that could allow batteries to store more energy and charge faster, potentially reducing greenhouse gas emissions and increasing the reliance on renewable energy sources.
