@@ -1,0 +1,5 @@
+🧠 Prompt:
+test rthe internet
+
+📝 Response:
+A speed test is a tool provided by various websites such as TestMy.net, which helps you measure your internet connection's transfer rate. These tests can help you understand if your current internet speed meets expectations and offer suggestions on how to improve it if necessary. The results are generally unbiased because these services are not affiliated with ISPs.
