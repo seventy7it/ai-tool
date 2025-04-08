@@ -3,19 +3,38 @@ from pydantic import BaseModel
 from langchain_community.tools.tavily_search.tool import TavilySearchResults
 from langchain_ollama import ChatOllama
 from langchain.agents import initialize_agent, AgentType, Tool
+from pydantic import BaseModel as PydanticBaseModel
 from dotenv import load_dotenv
 import os
 
 # Load environment variables
 load_dotenv()
 
-# Initialize Tavily and tools
+# Define tool input schema
+class TavilyInput(PydanticBaseModel):
+    query: str
+
+# Initialize Tavily search instance
 search = TavilySearchResults()
+
+# Fancy summarizing wrapper for Tavily results
+def search_and_summarize(query: str) -> str:
+    results = search.run(query)
+    if isinstance(results, list) and results:
+        top = results[0]
+        title = top.get("title", "No title")
+        content = top.get("content", "No content available.")
+        return f"{title}\n\nSummary: {content[:500]}..."  # Truncated summary
+    return "No relevant search results found."
+
+# Wrap tool for the agent
 tools = [
     Tool.from_function(
-        func=search.run,
-        name="tavily_search_results_json",
-        description="Web search for recent or real-time information."
+        func=search_and_summarize,
+        name="tavily_summarized_search",
+        description="Perform a web search and return a summarized snippet of the top result.",
+        args_schema=TavilyInput,
+        return_direct=True  # Directly respond with summary
     )
 ]
 
@@ -39,6 +58,9 @@ class QueryRequest(BaseModel):
 
 @app.post("/run-agent")
 async def run_agent(request: QueryRequest):
-    result = agent_executor.invoke({"input": request.query})
-    response = result["output"] if "output" in result else str(result)
-    return {"response": response}
+    try:
+        result = agent_executor.invoke({"input": request.query})
+        response = result.get("output") or str(result)
+        return {"response": response}
+    except Exception as e:
+        return {"error": str(e)}
