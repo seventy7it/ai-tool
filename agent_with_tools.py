@@ -97,10 +97,11 @@ class QueryRequest(BaseModel):
 @app.post("/run-agent")
 async def run_agent(request: QueryRequest):
     try:
-        SUPPORTED_MODELS = ["mistral", "llama3", "codellama"]
+        SUPPORTED_MODELS = ["mistral", "llama3", "codellama", "deepseek"]
         model_name = request.model or "mistral"
         if model_name not in SUPPORTED_MODELS:
             return {"error": f"Model '{model_name}' not supported."}
+        print(f"[INFO] Using model: {model_name}")
 
         llm = ChatOllama(model=model_name, base_url="http://localhost:11434")
 
@@ -114,15 +115,15 @@ async def run_agent(request: QueryRequest):
             max_execution_time=60
         )
 
-        # Prepend guidance so the agent always uses the tools
+        # Give the model date/time context and let it decide which tools to use
         now_full = datetime.now().strftime("%A, %B %d, %Y at %I:%M %p")
+        final_prompt = (
+            f"You are an assistant with access to web search and datetime tools.\n"
+            f"Today is {now_full}.\n"
+            f"Answer the user's question using your tools if helpful, otherwise answer directly.\n"
+            f"Question: {request.query}"
+        )
 
-final_prompt = (
-    f"You are an assistant with access to web search and current datetime tools.\n"
-    f"Today is {now_full}.\n"
-    f"Answer the user's question using your tools if needed, otherwise answer directly.\n"
-    f"Question: {request.query}"
-)
         result = agent_executor.invoke({"input": final_prompt})
         response = result.get("output") or str(result)
         return {"response": response}
