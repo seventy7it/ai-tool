@@ -36,7 +36,7 @@ def search_and_summarize(query: str) -> str:
         title = r.get("title", "Untitled")
         content_cleaned = re.sub(r"\s+", " ", content)
 
-        date_match = re.search(r"\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?) \d{1,2}, \d{4}\b", content_cleaned)
+        date_match = re.search(r"\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tem", content_cleaned)
         if date_match:
             try:
                 parsed_date = datetime.strptime(date_match.group(), "%B %d, %Y")
@@ -68,7 +68,7 @@ tools = [
     Tool.from_function(
         func=search_and_summarize,
         name="tavily_summarized_search",
-        description="Search the web and summarize relevant current or recent information. Always use this tool to gather context before answering questions.",
+        description="Search the web and summarize relevant current or recent information. Always use this tool to gather context before responding.",
         args_schema=TavilyInput,
         return_direct=True
     ),
@@ -91,16 +91,24 @@ class QueryRequest(BaseModel):
 async def run_agent(request: QueryRequest):
     try:
         input_text = request.query
-        model_name = getattr(request, "model", "mistral")
+        model_name = request.model or "mistral"
+
+        # Print model being used to terminal log
+        print("\n===== AGENT INVOCATION =====")
+        print(f"[MODEL] Using: {model_name}")
+        print(f"[QUERY] {input_text}\n")
+
         now_full = datetime.now().strftime("%A, %B %d, %Y at %I:%M %p")
         final_prompt = (
             f"You are an assistant with access to web search and datetime tools.\n"
             f"Today is {now_full}.\n"
             f"Answer the user's question using your tools if helpful, otherwise answer directly.\n"
-            f"Question: {request.query}"
+            f"Question: {input_text}"
         )
 
         llm = ChatOllama(model=model_name, base_url="http://localhost:11434")
+        print(f"[AGENT] Initialized with model: {llm.model}")  # Additional model log
+
         agent_executor = initialize_agent(
             tools=tools,
             llm=llm,
