@@ -85,7 +85,7 @@ app = FastAPI()
 
 class QueryRequest(BaseModel):
     query: str
-    model: Optional[str] = "mistral"
+    model: Optional[str] = "mistral, deepseek"
 
 @app.post("/run-agent")
 async def run_agent(request: QueryRequest):
