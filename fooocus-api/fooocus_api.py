@@ -8,7 +8,6 @@ from pathlib import Path
 app = FastAPI()
 
 def get_latest_focus_image(image_folder: str) -> Path | None:
-    # Recursively search for .png files in all subfolders
     pngs = sorted(Path(image_folder).rglob("*.png"), key=os.path.getmtime, reverse=True)
     return pngs[0] if pngs else None
 
@@ -16,7 +15,6 @@ def get_latest_focus_image(image_folder: str) -> Path | None:
 def get_latest_image():
     base_path = "/home/seventy7llm/Fooocus/outputs"
     try:
-        # Find latest subfolder
         folders = sorted(Path(base_path).glob("*"), key=os.path.getmtime, reverse=True)
         if not folders:
             return {"response": "No folders found."}
