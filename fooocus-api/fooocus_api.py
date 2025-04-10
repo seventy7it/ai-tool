@@ -1,32 +1,34 @@
-# fooocus_api.py
 import os
 import base64
-from datetime import datetime
-from fastapi import FastAPI
 from pathlib import Path
+from fastapi import FastAPI
 
-app = FastAPI()
-
-def get_latest_focus_image(image_folder: str) -> Path | None:
-    pngs = sorted(Path(image_folder).rglob("*.png"), key=os.path.getmtime, reverse=True)
-    return pngs[0] if pngs else None
+app = FastAPI()  # <- THIS is required by uvicorn
 
 @app.post("/get-latest-fooocus-image")
 def get_latest_image():
     base_path = "/home/seventy7llm/Fooocus/outputs"
+
+    def get_latest_image_path(folder: str) -> Path | None:
+        pngs = sorted(Path(folder).rglob("*.png"), key=os.path.getmtime, reverse=True)
+        return pngs[0] if pngs else None
+
     try:
         folders = sorted(Path(base_path).glob("*"), key=os.path.getmtime, reverse=True)
         if not folders:
-            return {"response": "No folders found."}
+            return {"type": "text", "content": "No folders found."}
 
         latest_folder = folders[0]
-        image_path = get_latest_focus_image(str(latest_folder))
+        image_path = get_latest_image_path(str(latest_folder))
         if not image_path:
-            return {"response": "No PNGs found."}
+            return {"type": "text", "content": "No PNGs found."}
 
-        with open(image_path, "rb") as img_file:
-            encoded = base64.b64encode(img_file.read()).decode("utf-8")
-        return {"response": f"data:image/png;base64,{encoded}"}
+        with open(image_path, "rb") as f:
+            encoded = base64.b64encode(f.read()).decode("utf-8")
+        return {
+            "type": "image",
+            "content": f"data:image/png;base64,{encoded}"
+        }
 
     except Exception as e:
-        return {"response": f"Error: {str(e)}"}
+        return {"type": "text", "content": f"Error: {str(e)}"}
