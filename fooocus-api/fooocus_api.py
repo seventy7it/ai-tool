@@ -1,45 +1,44 @@
-# fooocus_api.py
 import os
 import base64
+import shutil
+from datetime import datetime
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
 app = FastAPI()
 
+# Mount static directory
+STATIC_DIR = "static"
+os.makedirs(STATIC_DIR, exist_ok=True)
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
 def get_latest_focus_image(image_folder: str) -> Path | None:
-    print(f"🔍 Searching for .png files in: {image_folder}")
     pngs = sorted(Path(image_folder).rglob("*.png"), key=os.path.getmtime, reverse=True)
-    print(f"📸 Found {len(pngs)} image(s)")
     return pngs[0] if pngs else None
 
 @app.post("/get-latest-fooocus-image")
 def get_latest_image():
     base_path = "/home/seventy7llm/Fooocus/outputs"
     try:
-        print(f"📁 Scanning base output path: {base_path}")
         folders = sorted(Path(base_path).glob("*"), key=os.path.getmtime, reverse=True)
-        print(f"📂 Found folders: {[f.name for f in folders]}")
-
         if not folders:
-            return {"type": "text", "content": "❌ No subfolders found in Fooocus output."}
+            return {"response": "❌ No subfolders found in Fooocus output."}
 
         latest_folder = folders[0]
-        print(f"🆕 Latest folder: {latest_folder}")
-
         image_path = get_latest_focus_image(str(latest_folder))
-        print(f"🖼️ Latest image path: {image_path}")
+        if not image_path or not image_path.exists():
+            return {"response": "❌ No PNG images found in latest folder."}
 
-        if not image_path:
-            return {"type": "text", "content": "❌ No PNG images found in the latest folder."}
+        # Copy to static/latest.png
+        static_path = Path(STATIC_DIR) / "latest.png"
+        shutil.copy(image_path, static_path)
 
-        with open(image_path, "rb") as img_file:
-            encoded = base64.b64encode(img_file.read()).decode("utf-8")
-
+        # Return the public image URL
         return {
-            "type": "image",
-            "content": f"data:image/png;base64,{encoded}"
+            "type": "image_url",
+            "content": "http://host.docker.internal:8001/static/latest.png"
         }
 
     except Exception as e:
-        print(f"🔥 Error: {e}")
-        return {"type": "text", "content": f"🔥 Error: {str(e)}"}
+        return {"response": f"🔥 Error: {str(e)}"}
