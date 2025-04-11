@@ -1,0 +1,53 @@
+{
+  "prompt": {
+    "4": {
+      "inputs": {},
+      "class_type": "CheckpointLoaderSimple",
+      "widgets_values": ["v1-5-pruned-emaonly-fp16.safetensors"]
+    },
+    "5": {
+      "inputs": {},
+      "class_type": "EmptyLatentImage",
+      "widgets_values": [512, 512, 1]
+    },
+    "6": {
+      "inputs": {
+        "clip": [4, 1]
+      },
+      "class_type": "CLIPTextEncode",
+      "widgets_values": ["a futuristic Detroit at sunset"]
+    },
+    "7": {
+      "inputs": {
+        "clip": [4, 1]
+      },
+      "class_type": "CLIPTextEncode",
+      "widgets_values": ["low quality, blurry"]
+    },
+    "3": {
+      "inputs": {
+        "model": [4, 0],
+        "positive": [6, 0],
+        "negative": [7, 0],
+        "latent_image": [5, 0]
+      },
+      "class_type": "KSampler",
+      "widgets_values": ["random", "randomize", 20, 8, "euler", "normal", 1]
+    },
+    "8": {
+      "inputs": {
+        "samples": [3, 0],
+        "vae": [4, 2]
+      },
+      "class_type": "VAEDecode",
+      "widgets_values": []
+    },
+    "9": {
+      "inputs": {
+        "images": [8, 0]
+      },
+      "class_type": "SaveImage",
+      "widgets_values": ["ComfyUI"]
+    }
+  }
+}
