@@ -13,7 +13,7 @@ volume_name="open-webui"
 # Make sure backup folder exists
 mkdir -p "$backup_folder"
 
-# Create a temporary container to access the volume and backup
+# Create a backup
 docker run --rm \
   -v ${volume_name}:/data \
   -v ${backup_folder}:/backup \
@@ -21,3 +21,7 @@ docker run --rm \
   tar -czvf /backup/$backup_file -C /data .
 
 echo "✅ Open WebUI backup created: $backup_folder/$backup_file"
+
+# 🧹 Purge old backups (older than 7 days)
+find "$backup_folder" -name "openwebui_backup_*.tar.gz" -mtime +7 -exec rm {} \;
+echo "🧹 Old backups older than 7 days have been deleted."
